@@ -41,9 +41,10 @@ exports.createTicket = async (req, res) => {
 // Get only tickets assigned to the logged-in user
 exports.getMyTickets = async (req, res) => {
   try {
-    const userEmail = req.user.email; // From auth middleware
+    const userId = req.user.id; // From auth middleware
+    console.log("responce is ",userId)
     const tickets = await Ticket.findAll({
-      where: { assignedToEmail: userEmail }
+      where: { assignedToUserId: userId }
     });
     res.status(200).json(tickets);
   } catch (error) {
