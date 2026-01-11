@@ -75,6 +75,7 @@ exports.updateTicket = async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
     const userEmail = req.user.email;
+    const userId =req.user.id
 
     // Find the ticket
     const ticket = await Ticket.findByPk(id);
@@ -85,7 +86,7 @@ exports.updateTicket = async (req, res) => {
 
     // Check if user is authorized to update this ticket
     // User can update if they are assigned to it or are a team-leader
-    if (ticket.assignedToEmail !== userEmail && req.user.role !== 'team-leader') {
+    if (ticket.assignedToUserId !== userId && req.user.role !== 'team-leader') {
       return res.status(403).json({ message: 'Unauthorized to update this ticket' });
     }
 
