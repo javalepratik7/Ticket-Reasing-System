@@ -1,6 +1,7 @@
 const db = require('../models');
 const Ticket = db.Ticket;
 const TicketAssignmentService = require('../services/ticketAssignmentService');
+const EmailService = require('../services/emailServices');
 
 
 exports.createTicket = async (req, res) => {
@@ -27,6 +28,20 @@ exports.createTicket = async (req, res) => {
     }
 
     const ticket = await Ticket.create(ticketData);
+
+      if (ticket.createdByUserEmail) {
+        EmailService.sendTicketCreatedEmail({
+          to: ticket.createdByUserEmail,
+          subject: ticket.Subject,
+          description: ticket.description || 'N/A',
+          status: ticket.status || 'OPEN',
+          orderId: ticket.orderId || ticket.id,
+          ticketUrl: `${process.env.FRONTEND_URL}/tickets/${ticket.id}`
+        }).catch(err => {
+          // Senior move: log but don’t fail API
+          console.error('Email send failed:', err.message);
+        });
+      }
 
     res.status(201).json(ticket);
   } catch (error) {

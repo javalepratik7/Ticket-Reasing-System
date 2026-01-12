@@ -1,55 +1,67 @@
 const db = require('../models');
-const IssueCategory = db.IssueCategory;
+const { IssueCategory, CategoryFAQ } = db;
 
 exports.createCategory = async (req, res) => {
   try {
-    const category = await IssueCategory.create(req.body);
+    const { typeOfCategory } = req.body;
+
+    if (!typeOfCategory) {
+      return res.status(400).json({ message: 'typeOfCategory is required' });
+    }
+
+    const category = await IssueCategory.create({ typeOfCategory });
     res.status(201).json(category);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error creating category', error });
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.addFAQ = async (req, res) => {
+  try {
+    const { categoryId } = req.params;
+    const { question, answer } = req.body;
+
+    if (!question || !answer) {
+      return res.status(400).json({ message: 'Question & Answer required' });
+    }
+
+    const faq = await CategoryFAQ.create({
+      question,
+      answer,
+      categoryId
+    });
+
+    res.status(201).json(faq);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
 exports.getAllCategories = async (req, res) => {
   try {
-    const categories = await IssueCategory.findAll();
-    res.status(200).json(categories);
+    const categories = await IssueCategory.findAll({
+      include: [{ model: CategoryFAQ, as: 'faqs' }]
+    });
+
+    res.json(categories);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error fetching categories', error });
+    res.status(500).json({ message: error.message });
   }
 };
 
 exports.getCategoryByType = async (req, res) => {
   try {
-    const category = await IssueCategory.findOne({ where: { typeOfCategory: req.params.type } });
-    if (!category) return res.status(404).json({ message: 'Category not found' });
-    res.status(200).json(category);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error fetching category', error });
-  }
-};
+    const category = await IssueCategory.findOne({
+      where: { typeOfCategory: req.params.type },
+      include: [{ model: CategoryFAQ, as: 'faqs' }]
+    });
 
-exports.updateCategory = async (req, res) => {
-  try {
-    const updated = await IssueCategory.update(req.body, { where: { typeOfCategory: req.params.type } });
-    if (updated[0] === 0) return res.status(404).json({ message: 'Category not found' });
-    res.status(200).json({ message: 'Category updated successfully' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error updating category', error });
-  }
-};
+    if (!category) {
+      return res.status(404).json({ message: 'Category not found' });
+    }
 
-exports.deleteCategory = async (req, res) => {
-  try {
-    const deleted = await IssueCategory.destroy({ where: { typeOfCategory: req.params.type } });
-    if (!deleted) return res.status(404).json({ message: 'Category not found' });
-    res.status(200).json({ message: 'Category deleted successfully' });
+    res.json(category);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error deleting category', error });
+    res.status(500).json({ message: error.message });
   }
 };

@@ -129,3 +129,115 @@ curl -X DELETE 'http://localhost:5000/api/categories/CATEGORY_ID' \
 
 
 SMTP password ( email services )----hwpd czuo svyd unzw
+
+
+
+
+POST /api/categories
+
+
+```bash
+curl -X POST http://localhost:5000/api/categories \
+  -H "Content-Type: application/json" \
+  -d '{
+    "typeOfCategory": "Payment Issue"
+  }'
+
+🔹 2. Get All Categories (With FAQs)
+
+Endpoint
+
+GET /api/categories
+
+
+cURL
+
+curl -X GET http://localhost:5000/api/categories
+
+🔹 3. Get Category by Type
+
+Endpoint
+
+GET /api/categories/:type
+
+
+cURL
+
+curl -X GET http://localhost:5000/api/categories/Payment%20Issue
+
+🔹 4. Update Category
+
+Endpoint
+
+PUT /api/categories/:type
+
+
+cURL
+
+curl -X PUT http://localhost:5000/api/categories/Payment%20Issue \
+  -H "Content-Type: application/json" \
+  -d '{
+    "typeOfCategory": "Payment & Refund Issue"
+  }'
+
+🔹 5. Delete Category
+
+Endpoint
+
+DELETE /api/categories/:type
+
+
+cURL
+
+curl -X DELETE http://localhost:5000/api/categories/Payment%20Issue
+
+🔹 6. Add FAQ to Category
+
+Endpoint
+
+POST /api/categories/:categoryId/faqs
+
+
+cURL
+
+curl -X POST http://localhost:5000/api/categories/1/faqs \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "My payment was deducted but order not placed",
+    "answer": "If payment is deducted, it will be refunded within 3–5 working days."
+  }'
+
+🔹 7. Add Multiple FAQs to Same Category
+curl -X POST http://localhost:5000/api/categories/1/faqs \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "Can I change payment method?",
+    "answer": "Once payment is initiated, the payment method cannot be changed."
+  }'
+
+🔹 8. Update FAQ
+
+Endpoint
+
+PUT /api/faqs/:faqId
+
+
+cURL
+
+curl -X PUT http://localhost:5000/api/faqs/1 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "Payment deducted but order not created",
+    "answer": "Refund will be processed automatically within 3–5 business days."
+  }'
+
+🔹 9. Delete FAQ
+
+Endpoint
+
+DELETE /api/faqs/:faqId
+
+
+cURL
+
+curl -X DELETE http://localhost:5000/api/faqs/1
