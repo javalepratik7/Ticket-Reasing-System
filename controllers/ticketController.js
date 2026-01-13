@@ -55,7 +55,6 @@ exports.createTicket = async (req, res) => {
     // 5️⃣ Upload attachment to S3 (if provided)
     if (req.file) {
       const attachmentUrl = await uploadFileToS3(req.file, ticket.id);
-      console.log("attachmentUrlattachmentUrl",attachmentUrl)
 
       ticket.AttachmentUrl = attachmentUrl;
       await ticket.save();
@@ -64,8 +63,8 @@ exports.createTicket = async (req, res) => {
     // 6️⃣ Email notification (non-blocking)
     if (ticket.createdByUserEmail) {
       EmailService.sendTicketCreatedEmail({
-        // to: shopifyUser.email, 
-        to: 'pratik@yopmail.com', // Test the email services with dummy data 
+        to: ticket?.createdByUserEmail, 
+        // to: 'pratik@yopmail.com', // Test the email services with dummy data 
         subject: ticket.Subject,
         description: ticket.description || 'N/A',
         status: ticket.status || 'OPEN',
@@ -95,7 +94,6 @@ exports.createTicket = async (req, res) => {
 exports.getMyTickets = async (req, res) => {
   try {
     const userId = req.user.id; // From auth middleware
-    console.log("responce is ",userId)
     const tickets = await Ticket.findAll({
       where: { assignedToUserId: userId }
     });
@@ -127,54 +125,53 @@ exports.updateTicket = async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
-    const userEmail = req.user.email;
     const userId =req.user.id
 
-    // Find the ticket
+    // 1️⃣ Find ticket
     const ticket = await Ticket.findByPk(id);
-    
+
     if (!ticket) {
       return res.status(404).json({ message: 'Ticket not found' });
     }
 
-    // Check if user is authorized to update this ticket
-    // User can update if they are assigned to it or are a team-leader
-    if (ticket.assignedToUserId !== userId && req.user.role !== 'team-leader') {
+    // 2️⃣ Authorization
+    // Assigned user OR team-leader can update
+    if (
+      ticket.assignedToUserId !== userId &&
+      req.user.role !== 'team-leader'
+    ) {
       return res.status(403).json({ message: 'Unauthorized to update this ticket' });
     }
 
-    // If priority is being changed and ticket is reassigned
+    // 3️⃣ Handle priority change (optional re-assignment logic)
     if (updateData.priority && updateData.priority !== ticket.priority) {
-      // Decrement old priority count for current assignee
-      if (ticket.assignedToEmail) {
-        await TicketAssignmentService.updateIssueCount(
-          ticket.assignedToEmail,
-          ticket.priority,
-          false
-        );
-      }
+      const newAssignedUser = await TicketAssignmentService.assignTicket(updateData.priority);
 
-      // Auto-reassign based on new priority
-      const newAssignedUser = await TicketAssignmentService.findBestUserForTicket(updateData.priority);
-      
       if (newAssignedUser) {
-        updateData.assignedToEmail = newAssignedUser.email;
-        
-        // Increment new priority count for new assignee
-        await TicketAssignmentService.updateIssueCount(
-          newAssignedUser.email,
-          updateData.priority,
-          true
-        );
+        updateData.assignedToUserId = newAssignedUser.id;
       }
     }
 
-    // Update the ticket
+    // 4️⃣ Upload reply attachment to S3 (image / video / doc)
+    if (req.file) {
+      const replyAttachmentUrl = await uploadFileToS3(req.file, ticket.id);
+      updateData.replayAttachmentUrl = replyAttachmentUrl;
+    }
+
+    // 5️⃣ Update ticket
     const updatedTicket = await ticket.update(updateData);
-    res.status(200).json(updatedTicket);
+
+    res.status(200).json({
+      message: 'Ticket updated successfully',
+      ticket: updatedTicket
+    });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error updating ticket', error: error.message });
+    console.error('Update Ticket Error:', error);
+    res.status(500).json({
+      message: 'Error updating ticket',
+      error: error.message
+    });
   }
 };
 
