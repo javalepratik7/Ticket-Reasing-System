@@ -158,8 +158,25 @@ exports.updateTicket = async (req, res) => {
       updateData.replayAttachmentUrl = replyAttachmentUrl;
     }
 
-    // 5️⃣ Update ticket
+    // 5️⃣ Check status transition → resolve
+    const wasResolved = ticket.status === 'resolve';
+    const willBeResolved = updateData.status === 'resolve';
+
+    // 6️⃣ Update ticket
     const updatedTicket = await ticket.update(updateData);
+
+    // 7️⃣ Send email only when status changes to RESOLVED
+    if (!wasResolved && willBeResolved && ticket.createdByUserEmail) {
+      EmailService.sendTicketResolvedEmail({
+        to: ticket.createdByUserEmail,
+        subject: ticket.Subject,
+        orderId: ticket.OrderId,
+        response: updateData.replay || ticket.replay,
+        ticketUrl: `${process.env.FRONTEND_URL}/tickets/${ticket.id}`
+      }).catch(err => {
+        console.error('Resolved email failed:', err.message);
+      });
+    }
 
     res.status(200).json({
       message: 'Ticket updated successfully',

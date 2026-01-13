@@ -53,7 +53,7 @@ class EmailService {
 
       We will keep you updated on the status via email.
           `,
-            html: `
+      html: `
       <!DOCTYPE html>
       <html>
         <body style="margin:0; padding:0; background-color:#f4f6f8; font-family:Arial, sans-serif;">
@@ -132,6 +132,110 @@ class EmailService {
                   <!-- Footer -->
                   <tr>
                     <td style="background:#f9fafb; padding:16px; text-align:center; font-size:12px; color:#777777; border-radius:0 0 8px 8px;">
+                      This is an automated message. Please do not reply.
+                    </td>
+                  </tr>
+
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+      </html>
+    `
+    });
+  }
+
+  async sendTicketResolvedEmail({
+    to,
+    subject,
+    orderId,
+    response,
+    ticketUrl
+  }) {
+    return this.sendEmail({
+      to,
+      subject: `Ticket Update: Your Issue Has Been Resolved (Order #${orderId})`,
+      text: `
+      Your ticket has been resolved.
+
+      Response on your ticket:
+      ${response}
+
+      If you need further assistance, you can view or reopen the ticket here:
+      ${ticketUrl}
+          `,
+            html: `
+      <!DOCTYPE html>
+      <html>
+        <body style="background:#f4f6f8; font-family:Arial, sans-serif;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td align="center" style="padding:40px 10px;">
+                <table width="600" style="background:#ffffff; border-radius:8px;">
+
+                  <!-- Header -->
+                  <tr>
+                    <td style="background:#4f46e5; color:#ffffff; padding:20px; border-radius:8px 8px 0 0;">
+                      <h2 style="margin:0;">Ticket Resolved</h2>
+                    </td>
+                  </tr>
+
+                  <!-- Body -->
+                  <tr>
+                    <td style="padding:24px; color:#333;">
+                      <p>
+                        Your ticket has been successfully resolved. Please find the response below.
+                      </p>
+
+                      <p><strong>Subject:</strong> ${subject}</p>
+                      <p><strong>Order ID:</strong> ${orderId}</p>
+
+                      <!-- Ticket Response -->
+                      <div style="
+                        margin:24px 0;
+                        padding:16px;
+                        background:#f9fafb;
+                        border-left:4px solid #4f46e5;
+                        border-radius:6px;
+                      ">
+                        <p style="margin:0; font-size:14px; font-weight:600;">
+                          Response on your ticket
+                        </p>
+                        <p style="margin-top:8px; font-size:14px; line-height:1.6;">
+                          ${response || 'No additional details were provided.'}
+                        </p>
+                      </div>
+
+                      <!-- CTA -->
+                      <div style="text-align:center; margin:30px 0;">
+                        <a href="${ticketUrl}"
+                          style="
+                            background:#4f46e5;
+                            color:#ffffff;
+                            padding:12px 24px;
+                            text-decoration:none;
+                            border-radius:6px;
+                            font-size:14px;
+                          ">
+                          View Ticket
+                        </a>
+                      </div>
+
+                      <p style="font-size:13px; color:#555;">
+                        If this does not fully resolve your issue, you can reply or reopen the ticket from your dashboard.
+                      </p>
+
+                      <p style="margin-top:30px;">
+                        Regards,<br/>
+                        <strong>${process.env.APP_NAME}</strong>
+                      </p>
+                    </td>
+                  </tr>
+
+                  <!-- Footer -->
+                  <tr>
+                    <td style="background:#f9fafb; text-align:center; padding:14px; font-size:12px; color:#777;">
                       This is an automated message. Please do not reply.
                     </td>
                   </tr>
