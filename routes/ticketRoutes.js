@@ -2,9 +2,10 @@ const express = require('express');
 const router = express.Router();
 const ticketController = require('../controllers/ticketController');
 const authMiddleware = require('../middleware/authMiddleware');
+const upload = require('../middleware/uploadMiddleware');
 
 // Public route: anyone can create tickets without authentication
-router.post('/', ticketController.createTicket);
+router.post('/', upload.single('attachment'),ticketController.createTicket);
 
 // Protected routes: require authentication
 router.get('/', authMiddleware, ticketController.getMyTickets); // Get only user's assigned tickets

@@ -2,23 +2,45 @@ const db = require('../models');
 const Ticket = db.Ticket;
 const TicketAssignmentService = require('../services/ticketAssignmentService');
 const EmailService = require('../services/emailServices');
-
+const { getUserDetailsFromShopify } = require('../services/userDetailsFromShopifyServices');
+const { uploadFileToS3 } = require('../utils/s3Upload');
 
 exports.createTicket = async (req, res) => {
   try {
     const ticketData = req.body;
 
+    // 1️⃣ Basic validation
     if (!ticketData.Subject || !ticketData.priority) {
       return res.status(400).json({
         message: 'Subject and priority are required'
       });
     }
 
-    // Optional creator info (public user)
-    ticketData.createdByUsername = ticketData.createdByUsername || 'Anonymous';
-    ticketData.createdByUserEmail = ticketData.createdByUserEmail || null;
+    if (!ticketData.OrderId) {
+      return res.status(400).json({
+        message: 'OrderId is required to create a ticket'
+      });
+    }
 
-    // Auto-assign internally
+    // 2️⃣ Get Shopify user details
+    try {
+      const shopifyUser = await getUserDetailsFromShopify(ticketData.OrderId);
+
+      ticketData.createdByUsername =
+        shopifyUser.userName || 'Shopify Customer';
+      ticketData.createdByUserEmail =
+        shopifyUser.userEmail || null;
+      ticketData.createdByUserPhone =
+        shopifyUser.userPhoneNo || null;
+
+    } catch (err) {
+      console.error('Shopify fetch failed:', err.message);
+      ticketData.createdByUsername = 'Unknown Customer';
+      ticketData.createdByUserEmail = null;
+      ticketData.createdByUserPhone = null;
+    }
+
+    // 3️⃣ Assign ticket internally
     const assignedUser = await TicketAssignmentService.assignTicket(
       ticketData.priority
     );
@@ -27,23 +49,39 @@ exports.createTicket = async (req, res) => {
       ticketData.assignedToUserId = assignedUser.id;
     }
 
+    // 4️⃣ Create ticket first (needed for ticket.id)
     const ticket = await Ticket.create(ticketData);
 
-      if (ticket.createdByUserEmail) {
-        EmailService.sendTicketCreatedEmail({
-          to: ticket.createdByUserEmail,
-          subject: ticket.Subject,
-          description: ticket.description || 'N/A',
-          status: ticket.status || 'OPEN',
-          orderId: ticket.orderId || ticket.id,
-          ticketUrl: `${process.env.FRONTEND_URL}/tickets/${ticket.id}`
-        }).catch(err => {
-          // Senior move: log but don’t fail API
-          console.error('Email send failed:', err.message);
-        });
-      }
+    // 5️⃣ Upload attachment to S3 (if provided)
+    if (req.file) {
+      const attachmentUrl = await uploadFileToS3(req.file, ticket.id);
+      console.log("attachmentUrlattachmentUrl",attachmentUrl)
 
-    res.status(201).json(ticket);
+      ticket.AttachmentUrl = attachmentUrl;
+      await ticket.save();
+    }
+
+    // 6️⃣ Email notification (non-blocking)
+    if (ticket.createdByUserEmail) {
+      EmailService.sendTicketCreatedEmail({
+        // to: shopifyUser.email, 
+        to: 'pratik@yopmail.com', // Test the email services with dummy data 
+        subject: ticket.Subject,
+        description: ticket.description || 'N/A',
+        status: ticket.status || 'OPEN',
+        orderId: ticket.OrderId,
+        ticketUrl: `${process.env.FRONTEND_URL}/tickets/${ticket.id}`
+      }).catch(err => {
+        console.error('Email send failed:', err.message);
+      });
+    }
+
+    // 7️⃣ Response
+    res.status(201).json({
+      message: 'Ticket created successfully',
+      ticket
+    });
+
   } catch (error) {
     console.error('Create Ticket Error:', error);
     res.status(500).json({

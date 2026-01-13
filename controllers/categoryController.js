@@ -34,8 +34,14 @@ exports.getAllCategories = async (req, res) => {
 
 exports.getCategoryByType = async (req, res) => {
   try {
+    const { type } = req.params;
+
+    const whereClause = isNaN(type)
+      ? { typeOfCategory: type }   // search by type
+      : { id: type };              // search by categoryId
+
     const category = await IssueCategory.findOne({
-      where: { typeOfCategory: req.params.type },
+      where: whereClause,
       include: [{ model: CategoryFAQ, as: 'faqs' }]
     });
 

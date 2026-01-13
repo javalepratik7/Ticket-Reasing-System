@@ -55,21 +55,21 @@ curl -X POST 'http://localhost:5000/api/tickets' \
 ### **2. Get Tickets for Logged-in Member**
 
 ```bash
-curl -X GET 'http://localhost:5000/api/tickets/member' \
+curl -X GET 'http://localhost:5000/api/tickets/' \
   --header 'Authorization: Bearer YOUR_JWT_TOKEN'
 ```
 
 ### **3. Get All Tickets (Team Leader)**
 
 ```bash
-curl -X GET 'http://localhost:5000/api/tickets' \
+curl -X GET 'http://localhost:5000/api/tickets/all' \
   --header 'Authorization: Bearer YOUR_JWT_TOKEN'
 ```
 
 ### **4. Reply to Ticket**
 
 ```bash
-curl -X PUT 'http://localhost:5000/api/tickets/TICKET_ID/reply' \
+curl -X PUT 'http://localhost:5000/api/tickets/TICKET_ID' \
   --header 'Content-Type: application/json' \
   --header 'Authorization: Bearer YOUR_JWT_TOKEN' \
   --data '{
