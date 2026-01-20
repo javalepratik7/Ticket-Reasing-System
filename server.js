@@ -5,6 +5,7 @@ require('dotenv').config();
 const userRoutes = require('./routes/userRoutes');
 const ticketRoutes = require('./routes/ticketRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
+const WebHookRoutes = require('./routes/WebHookRoutes');
 
 const app = express();
 app.use(bodyParser.json());
@@ -13,6 +14,7 @@ app.use(bodyParser.json());
 app.use('/api/users', userRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/webhooks', WebHookRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
